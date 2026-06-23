@@ -1,0 +1,26 @@
+.app {
+  font-family: sans-serif;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+.dropzone {
+  border: 2px dashed #ccc;
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+.dropzone:hover {
+  border-color: #007bff;
+}
+.card {
+  border: 1px solid #ddd;
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 8px;
+}
+.card.pass { border-left: 5px solid green; }
+.card.fail { border-left: 5px solid red; }
+.errors { color: red; }
