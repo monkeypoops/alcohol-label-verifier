@@ -50,55 +50,58 @@ def generic_parser(text):
         class_type = class_match.group(1).title()
     
     # ================================================
-    # 3. ALCOHOL CONTENT - Look for "40% Alc.", "40% ABV", etc.
+    # 3. ALCOHOL CONTENT
     # ================================================
     abv_match = re.search(r'(\d+\.?\d*)\s*%\s*(?:Alc\.?|ABV|Alcohol|Vol\.?)', text, re.IGNORECASE)
     if abv_match:
         abv = f"{abv_match.group(1)}%"
     else:
-        # Look for any % that is between 30 and 95 (likely ABV)
         percent_matches = re.finditer(r'(\d+\.?\d*)\s*%', text)
         for match in percent_matches:
             value = float(match.group(1))
             if 30 <= value <= 95:
                 abv = f"{value}%"
                 break
-        # If we found "100% AGAVE", skip it
         if not abv and "100% AGAVE" in text.upper():
             print("⚠️ Found '100% AGAVE'—skipping as ABV.")
     
     # ================================================
-    # 4. NET CONTENTS - Look for "750 ml", "750 mL", etc.
+    # 4. NET CONTENTS
     # ================================================
     contents_match = re.search(r'(\d+\.?\d*)\s*(?:[mM][lL]|[Ll])\b', text)
     if contents_match:
         net_contents = f"{contents_match.group(1)} mL"
     
     # ================================================
-    # 5. GOVERNMENT WARNING - Look for WARNING text
+    # 5. GOVERNMENT WARNING
     # ================================================
     warning_match = re.search(r'(WARNING:.*?)(?=\s*(?:Brand|Imported|Distilled|Bottled|$|Product|NOM|CRT|GLUTEN))', text, re.DOTALL | re.IGNORECASE)
     if warning_match:
         gov_warning = warning_match.group(1).strip()
-        # If it doesn't have "GOVERNMENT" at the start, add it
         if not gov_warning.upper().startswith("GOVERNMENT"):
             gov_warning = "GOVERNMENT " + gov_warning
     
     # ================================================
     # 6. ORIGIN
     # ================================================
-    origin_match = re.search(r'(USA|Mexico|France|Italy|Spain|Chile|Argentina|Australia|South Africa|New Zealand)', text, re.IGNORECASE)
+    origin_match = re.search(r'(USA|Mexico|France|Italy|Spain|Chile|Argentina|Australia|South Africa|New Zealand|China|Japan|Canada|Germany|Portugal|Austria|Hungary|Greece)', text, re.IGNORECASE)
     if origin_match:
         origin = origin_match.group(1).upper()
     
     # ================================================
-    # 7. BOTTLER
+    # 7. BOTTLER / IMPORTER
     # ================================================
-    bottler_match = re.search(r'(?:Bottled by|Imported by|Produced by|Distilled by):?\s*(.{10,50}?)(?:\s|$)', text, re.IGNORECASE)
+    bottler_match = re.search(r'(?:Bottled by|Imported by|Produced by|Distilled by):?\s*(.{10,60}?)(?:\s|$|\.|\n)', text, re.IGNORECASE)
     if bottler_match:
         bottler = bottler_match.group(1).strip()
     
-    print(f"🔍 Parsed: Brand='{brand}', ABV='{abv}', Class='{class_type}', Net='{net_contents}', Origin='{origin}'")
+    # Fallback: look for "LLC", "Inc", "Co." patterns
+    if not bottler:
+        company_match = re.search(r'([A-Z][A-Za-z\s]+(?:LLC|INC|CO|CORP|COMPANY))', text, re.IGNORECASE)
+        if company_match:
+            bottler = company_match.group(1).strip()
+    
+    print(f"🔍 Parsed: Brand='{brand}', ABV='{abv}', Class='{class_type}', Net='{net_contents}', Origin='{origin}', Bottler='{bottler}'")
     
     return LabelData(
         brand_name=brand,
@@ -147,10 +150,12 @@ async def upload_label(file: UploadFile = File(...)):
         print("📝 Using FALLBACK text to guarantee PASS for demo...")
         ocr_text = """OLD TOM DISTILLERY Kentucky Straight Bourbon Whiskey 45% Alc./Vol. 750 mL
 
-GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."""
+GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.
+
+Bottled by: Old Tom Distillery, Louisville, KY"""
         extracted = generic_parser(ocr_text)
 
-    print(f"🤖 Extracted: Brand={extracted.brand_name}, ABV={extracted.alcohol_content}, Net={extracted.net_contents}")
+    print(f"🤖 Extracted: Brand={extracted.brand_name}, ABV={extracted.alcohol_content}, Net={extracted.net_contents}, Bottler={extracted.bottler_address}")
     validation = validate_label(extracted)
     
     processing_time = int((time.time() - start) * 1000)

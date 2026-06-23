@@ -13,11 +13,15 @@ def validate_label(data: LabelData) -> ValidationResult:
     errors = []
     warnings = []
 
-    # Brand check
+    # ================================================
+    # 1. BRAND NAME
+    # ================================================
     if not data.brand_name or len(data.brand_name.strip()) < 2:
         errors.append("Brand name is missing or too short.")
 
-    # ABV check - lenient: if ABV is 100%, it's likely "100% Agave" not alcohol
+    # ================================================
+    # 2. ALCOHOL CONTENT
+    # ================================================
     if data.alcohol_content:
         match = re.search(r'(\d+\.?\d*)%', data.alcohol_content)
         if match:
@@ -31,32 +35,45 @@ def validate_label(data: LabelData) -> ValidationResult:
     else:
         warnings.append("Alcohol content is missing. (This may be fine if not listed on the label)")
 
-    # Net Contents - lenient
+    # ================================================
+    # 3. NET CONTENTS
+    # ================================================
     if not data.net_contents:
         warnings.append("Net contents is missing. (This may be fine if not listed on the label)")
 
-    # Government Warning - lenient check (3 out of 5 key phrases)
+    # ================================================
+    # 4. GOVERNMENT WARNING
+    # ================================================
     if data.government_warning:
-        # Remove all non-alphanumeric characters for comparison
         clean_input = re.sub(r'[^a-zA-Z0-9\s]', '', data.government_warning.lower())
         clean_expected = re.sub(r'[^a-zA-Z0-9\s]', '', EXPECTED_WARNING.lower())
         
-        # Check for key phrases
         has_surgeon_general = "surgeon general" in clean_input
         has_pregnancy = "pregnancy" in clean_input
         has_drive = "drive" in clean_input
         has_government = "government" in clean_input
         has_warning = "warning" in clean_input
         
-        # Check if it contains at least 3 of the key elements
         key_phrases = [has_surgeon_general, has_pregnancy, has_drive, has_government, has_warning]
         if sum(key_phrases) >= 3:
-            # It's close enough to the real warning
+            # Close enough to the real warning
             pass
         else:
             errors.append("Government warning text does not match TTB requirement.")
     else:
         errors.append("Government warning is missing.")
+
+    # ================================================
+    # 5. BOTTLER / IMPORTER (Recommended, not required for prototype)
+    # ================================================
+    if not data.bottler_address:
+        warnings.append("Bottler/importer address is missing. (Required by TTB)")
+
+    # ================================================
+    # 6. ORIGIN (Recommended, not required for prototype)
+    # ================================================
+    if not data.country_of_origin:
+        warnings.append("Country of origin is missing. (Required for imports)")
 
     return ValidationResult(
         passed=len(errors) == 0,
