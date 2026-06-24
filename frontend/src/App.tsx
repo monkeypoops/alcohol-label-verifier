@@ -22,14 +22,13 @@ function App() {
     } else {
       document.body.style.overflow = 'auto';
     }
-    // Cleanup when component unmounts
     return () => {
       document.body.style.overflow = 'auto';
     };
   }, [modalLetter]);
 
   // ================================================
-  // CLEANUP OBJECT URLs ON UNMOUNT
+  // CLEANUP OBJECT URLs
   // ================================================
   useEffect(() => {
     return () => {
@@ -161,7 +160,7 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
   };
 
   // ================================================
-  // FILE UPLOAD HANDLER (Batch + Real OCR)
+  // FILE UPLOAD
   // ================================================
   const onDrop = async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
@@ -337,35 +336,37 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
                         </div>
                       )}
                       <div className="card-fields-col">
-                        <div className="field">
-                          <span className="field-label">Brand</span>
-                          <span className="field-value">{res.extracted_data.brand_name || '—'}</span>
-                        </div>
-                        <div className="field">
-                          <span className="field-label">Type</span>
-                          <span className="field-value">{res.extracted_data.class_type || '—'}</span>
-                        </div>
-                        <div className="field">
-                          <span className="field-label">ABV</span>
-                          <span className="field-value">{res.extracted_data.alcohol_content || '—'}</span>
-                        </div>
-                        <div className="field">
-                          <span className="field-label">Net Contents</span>
-                          <span className="field-value">{res.extracted_data.net_contents || '—'}</span>
-                        </div>
-                        <div className="field">
-                          <span className="field-label">Origin</span>
-                          <span className="field-value">{res.extracted_data.country_of_origin || '—'}</span>
-                        </div>
-                        <div className="field">
-                          <span className="field-label">Bottler</span>
-                          <span className="field-value">{res.extracted_data.bottler_address || '—'}</span>
-                        </div>
-                        <div className="field">
-                          <span className="field-label">Gov Warning</span>
-                          <span className="field-value">
-                            {res.extracted_data.government_warning ? '✅ Present' : '❌ Missing'}
-                          </span>
+                        <div className="fields-grid">
+                          <div className="field">
+                            <span className="field-label">Brand</span>
+                            <span className="field-value">{res.extracted_data.brand_name || '—'}</span>
+                          </div>
+                          <div className="field">
+                            <span className="field-label">Type</span>
+                            <span className="field-value">{res.extracted_data.class_type || '—'}</span>
+                          </div>
+                          <div className="field">
+                            <span className="field-label">ABV</span>
+                            <span className="field-value">{res.extracted_data.alcohol_content || '—'}</span>
+                          </div>
+                          <div className="field">
+                            <span className="field-label">Net Contents</span>
+                            <span className="field-value">{res.extracted_data.net_contents || '—'}</span>
+                          </div>
+                          <div className="field">
+                            <span className="field-label">Origin</span>
+                            <span className="field-value">{res.extracted_data.country_of_origin || '—'}</span>
+                          </div>
+                          <div className="field">
+                            <span className="field-label">Bottler</span>
+                            <span className="field-value">{res.extracted_data.bottler_address || '—'}</span>
+                          </div>
+                          <div className="field">
+                            <span className="field-label">Gov Warning</span>
+                            <span className="field-value">
+                              {res.extracted_data.government_warning ? '✅ Present' : '❌ Missing'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -392,7 +393,7 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
                       </div>
                     )}
 
-                    {/* ===== REJECTION LETTER BUTTON (Modal) ===== */}
+                    {/* ===== REJECTION LETTER BUTTON (Opens Modal) ===== */}
                     {!res.passed && (
                       <div className="rejection-actions">
                         <button
