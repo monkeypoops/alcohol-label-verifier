@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { uploadLabel } from './services/api';
 import type { LabelResult } from './types/label';
@@ -10,9 +10,39 @@ function App() {
   const [processedCount, setProcessedCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [modalLetter, setModalLetter] = useState<string | null>(null);
+  const [modalBrand, setModalBrand] = useState<string | null>(null);
 
   // ================================================
-  // GENERATE REJECTION LETTER (FIXED: removed unused 'index' and 'brand')
+  // EFFECT: Handle body overflow when modal is open
+  // ================================================
+  useEffect(() => {
+    if (modalLetter) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    // Cleanup when component unmounts
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [modalLetter]);
+
+  // ================================================
+  // CLEANUP OBJECT URLs ON UNMOUNT
+  // ================================================
+  useEffect(() => {
+    return () => {
+      results.forEach((r) => {
+        if (r.imageUrl && r.imageUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(r.imageUrl);
+        }
+      });
+    };
+  }, [results]);
+
+  // ================================================
+  // GENERATE REJECTION LETTER
   // ================================================
   const generateRejectionLetter = (result: LabelResult): string => {
     const brandName = result.extracted_data.brand_name || 'your brand';
@@ -66,7 +96,6 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
       setCopiedIndex(index);
       setTimeout(() => setCopiedIndex(null), 2000);
     }).catch(() => {
-      // Fallback for older browsers
       const textarea = document.createElement('textarea');
       textarea.value = text;
       document.body.appendChild(textarea);
@@ -94,7 +123,20 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
   };
 
   // ================================================
-  // "TRY SAMPLE LABEL" — Instant PASS result
+  // OPEN / CLOSE MODAL
+  // ================================================
+  const openModal = (letter: string, brandName: string) => {
+    setModalLetter(letter);
+    setModalBrand(brandName);
+  };
+
+  const closeModal = () => {
+    setModalLetter(null);
+    setModalBrand(null);
+  };
+
+  // ================================================
+  // "TRY SAMPLE LABEL"
   // ================================================
   const loadExample = () => {
     const exampleResult: LabelResult = {
@@ -113,6 +155,7 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
           'GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.',
       },
       processing_time_ms: 124,
+      imageUrl: '/images/Old Tom Distillery.jpg',
     };
     setResults([exampleResult, ...results]);
   };
@@ -131,9 +174,11 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
 
     for (let i = 0; i < acceptedFiles.length; i++) {
       const file = acceptedFiles[i];
+      const imageUrl = URL.createObjectURL(file);
+
       try {
         const res = await uploadLabel(file);
-        newResults.push(res);
+        newResults.push({ ...res, imageUrl });
       } catch (e) {
         console.error(`Failed to process ${file.name}:`, e);
         newResults.push({
@@ -151,6 +196,7 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
             government_warning: null,
           },
           processing_time_ms: 0,
+          imageUrl,
         });
       }
       setProcessedCount(i + 1);
@@ -170,6 +216,11 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
   });
 
   const clearResults = () => {
+    results.forEach((r) => {
+      if (r.imageUrl && r.imageUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(r.imageUrl);
+      }
+    });
     setResults([]);
   };
 
@@ -190,9 +241,9 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
         </div>
       </header>
 
-      {/* ===== MAIN DASHBOARD (Split Layout) ===== */}
+      {/* ===== DASHBOARD ===== */}
       <div className="dashboard">
-        {/* LEFT COLUMN: Upload + Actions */}
+        {/* LEFT PANEL */}
         <div className="upload-panel">
           <div className="panel-card">
             <h2>Upload Labels</h2>
@@ -200,7 +251,6 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
               Upload one or multiple label images for instant TTB compliance verification.
             </p>
 
-            {/* Dropzone */}
             <div
               {...getRootProps()}
               className={`dropzone ${isDragActive ? 'active' : ''} ${loading ? 'processing' : ''}`}
@@ -214,7 +264,6 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="action-bar">
               <button className="btn-primary" onClick={loadExample} disabled={loading}>
                 🚀 Try Sample Label
@@ -228,7 +277,6 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
             </p>
           </div>
 
-          {/* Progress (shown during batch upload) */}
           {loading && (
             <div className="progress-container">
               <div className="progress-bar">
@@ -245,7 +293,7 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
           )}
         </div>
 
-        {/* RIGHT COLUMN: Results */}
+        {/* RIGHT PANEL: Results */}
         <div className="results-panel">
           <div className="results-header">
             <h2>
@@ -272,6 +320,7 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
 
                 return (
                   <div key={res.id} className={`result-card ${res.passed ? 'pass' : 'fail'}`}>
+                    {/* Card Header */}
                     <div className="card-header">
                       <span className="label-number">#{idx + 1}</span>
                       <span className={`status-badge ${res.passed ? 'pass' : 'fail'}`}>
@@ -280,39 +329,48 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
                       <span className="processing-time">{res.processing_time_ms}ms</span>
                     </div>
 
-                    <div className="card-body">
-                      <div className="field">
-                        <span className="field-label">Brand</span>
-                        <span className="field-value">{res.extracted_data.brand_name || '—'}</span>
-                      </div>
-                      <div className="field">
-                        <span className="field-label">Type</span>
-                        <span className="field-value">{res.extracted_data.class_type || '—'}</span>
-                      </div>
-                      <div className="field">
-                        <span className="field-label">ABV</span>
-                        <span className="field-value">{res.extracted_data.alcohol_content || '—'}</span>
-                      </div>
-                      <div className="field">
-                        <span className="field-label">Net Contents</span>
-                        <span className="field-value">{res.extracted_data.net_contents || '—'}</span>
-                      </div>
-                      <div className="field">
-                        <span className="field-label">Origin</span>
-                        <span className="field-value">{res.extracted_data.country_of_origin || '—'}</span>
-                      </div>
-                      <div className="field">
-                        <span className="field-label">Bottler</span>
-                        <span className="field-value">{res.extracted_data.bottler_address || '—'}</span>
-                      </div>
-                      <div className="field">
-                        <span className="field-label">Gov Warning</span>
-                        <span className="field-value">
-                          {res.extracted_data.government_warning ? '✅ Present' : '❌ Missing'}
-                        </span>
+                    {/* Card Body: Image + Fields */}
+                    <div className="card-body-layout">
+                      {res.imageUrl && (
+                        <div className="card-image-col">
+                          <img src={res.imageUrl} alt="Label" />
+                        </div>
+                      )}
+                      <div className="card-fields-col">
+                        <div className="field">
+                          <span className="field-label">Brand</span>
+                          <span className="field-value">{res.extracted_data.brand_name || '—'}</span>
+                        </div>
+                        <div className="field">
+                          <span className="field-label">Type</span>
+                          <span className="field-value">{res.extracted_data.class_type || '—'}</span>
+                        </div>
+                        <div className="field">
+                          <span className="field-label">ABV</span>
+                          <span className="field-value">{res.extracted_data.alcohol_content || '—'}</span>
+                        </div>
+                        <div className="field">
+                          <span className="field-label">Net Contents</span>
+                          <span className="field-value">{res.extracted_data.net_contents || '—'}</span>
+                        </div>
+                        <div className="field">
+                          <span className="field-label">Origin</span>
+                          <span className="field-value">{res.extracted_data.country_of_origin || '—'}</span>
+                        </div>
+                        <div className="field">
+                          <span className="field-label">Bottler</span>
+                          <span className="field-value">{res.extracted_data.bottler_address || '—'}</span>
+                        </div>
+                        <div className="field">
+                          <span className="field-label">Gov Warning</span>
+                          <span className="field-value">
+                            {res.extracted_data.government_warning ? '✅ Present' : '❌ Missing'}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
+                    {/* Errors & Warnings */}
                     {res.errors.length > 0 && (
                       <div className="card-errors">
                         <strong>Errors:</strong>
@@ -334,31 +392,27 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
                       </div>
                     )}
 
-                    {/* ===== REJECTION LETTER (ONLY FOR FAILED LABELS) ===== */}
+                    {/* ===== REJECTION LETTER BUTTON (Modal) ===== */}
                     {!res.passed && (
-                      <div className="rejection-letter">
-                        <div className="letter-header">
-                          <span className="letter-icon">📧</span>
-                          <strong>Rejection Letter</strong>
-                          <span className="letter-badge">Draft</span>
-                        </div>
-                        <div className="letter-body">
-                          <pre>{letter}</pre>
-                        </div>
-                        <div className="letter-actions">
-                          <button
-                            className="btn-letter"
-                            onClick={() => copyToClipboard(letter, idx)}
-                          >
-                            {copiedIndex === idx ? '✅ Copied!' : '📋 Copy Letter'}
-                          </button>
-                          <button
-                            className="btn-letter"
-                            onClick={() => downloadLetter(letter, brandName)}
-                          >
-                            ⬇️ Download .txt
-                          </button>
-                        </div>
+                      <div className="rejection-actions">
+                        <button
+                          className="btn-letter-primary"
+                          onClick={() => openModal(letter, brandName)}
+                        >
+                          📧 View Rejection Letter
+                        </button>
+                        <button
+                          className="btn-letter-secondary"
+                          onClick={() => copyToClipboard(letter, idx)}
+                        >
+                          {copiedIndex === idx ? '✅ Copied!' : '📋 Copy'}
+                        </button>
+                        <button
+                          className="btn-letter-secondary"
+                          onClick={() => downloadLetter(letter, brandName)}
+                        >
+                          ⬇️ Download
+                        </button>
                       </div>
                     )}
                   </div>
@@ -368,6 +422,32 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
           )}
         </div>
       </div>
+
+      {/* ===== MODAL ===== */}
+      {modalLetter && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>📧 Rejection Letter</h2>
+              <button className="modal-close" onClick={closeModal}>✕</button>
+            </div>
+            <div className="modal-body">
+              <pre>{modalLetter}</pre>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-letter-primary" onClick={() => copyToClipboard(modalLetter, -1)}>
+                📋 Copy
+              </button>
+              <button className="btn-letter-primary" onClick={() => downloadLetter(modalLetter, modalBrand || 'Label')}>
+                ⬇️ Download .txt
+              </button>
+              <button className="btn-secondary" onClick={closeModal}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <footer className="app-footer">
         <p>Built for the TTB Compliance Division • Prototype v1.0</p>

@@ -13,4 +13,5 @@ export interface LabelResult {
     government_warning: string | null;
   };
   processing_time_ms: number;
+  imageUrl?: string;  // <-- ADD THIS LINE
 }
