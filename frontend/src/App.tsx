@@ -41,21 +41,26 @@ function App() {
   }, [results]);
 
   // ================================================
-  // GENERATE REJECTION LETTER
+  // GENERATE REJECTION LETTER (With Full Warning Text)
   // ================================================
   const generateRejectionLetter = (result: LabelResult): string => {
     const brandName = result.extracted_data.brand_name || 'your brand';
     const missingFields: string[] = [];
-    
+
     if (!result.extracted_data.brand_name) missingFields.push('• Brand Name');
     if (!result.extracted_data.class_type) missingFields.push('• Class/Type Designation');
     if (!result.extracted_data.alcohol_content) missingFields.push('• Alcohol Content (ABV)');
     if (!result.extracted_data.net_contents) missingFields.push('• Net Contents');
     if (!result.extracted_data.bottler_address) missingFields.push('• Bottler/Importer Name and Address');
     if (!result.extracted_data.country_of_origin) missingFields.push('• Country of Origin (for imports)');
-    if (!result.extracted_data.government_warning) missingFields.push('• Government Health Warning Statement');
+    if (!result.extracted_data.government_warning) missingFields.push('• Government Health Warning Statement (exact text required — see below)');
 
     const missingList = missingFields.join('\n');
+
+    // ================================================
+    // FULL GOVERNMENT WARNING TEXT (TTB Required)
+    // ================================================
+    const fullWarningText = `GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.`;
 
     return `Dear ${brandName},
 
@@ -73,7 +78,9 @@ The TTB requires the following mandatory information on all alcohol beverage lab
 • Net Contents
 • Bottler/Importer Name and Address
 • Country of Origin (for imported products)
-• Government Health Warning Statement (exact wording, "GOVERNMENT WARNING" in all caps)
+• Government Health Warning Statement (exact wording, must be in ALL CAPS):
+
+"${fullWarningText}"
 
 For complete guidelines, please refer to TTB.gov.
 
