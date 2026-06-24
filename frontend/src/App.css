@@ -256,12 +256,8 @@ body {
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* ===== RIGHT PANEL (Results) ===== */
@@ -410,18 +406,45 @@ body {
   font-size: 0.65rem;
 }
 
-.card-body {
+/* ===== CARD BODY: IMAGE + FIELDS SIDE-BY-SIDE ===== */
+.card-body-layout {
+  display: flex;
+  gap: 20px;
   padding: 14px 16px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2px 24px;
+  align-items: flex-start;
 }
 
-.field {
+.card-image-col {
+  flex: 0 0 120px;
+  max-width: 120px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e9edf4;
+  background: #f8f9fb;
+}
+
+.card-image-col img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+.card-fields-col {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ===== FIELDS ===== */
+.card-fields-col .field {
   display: flex;
   justify-content: space-between;
-  padding: 4px 0;
+  padding: 3px 0;
   border-bottom: 1px solid #f1f4f8;
+}
+
+.card-fields-col .field:last-of-type {
+  border-bottom: none;
 }
 
 .field-label {
@@ -441,6 +464,7 @@ body {
   word-break: break-word;
 }
 
+/* ===== ERRORS & WARNINGS ===== */
 .card-errors,
 .card-warnings {
   padding: 10px 16px;
@@ -481,6 +505,144 @@ body {
   font-size: 0.8rem;
 }
 
+/* ===== REJECTION LETTER ACTIONS (Buttons) ===== */
+.rejection-actions {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px 16px;
+  border-top: 1px solid #f0e8d8;
+  flex-wrap: wrap;
+  background: #fef9f0;
+}
+
+.btn-letter-primary {
+  background: #d4a02b;
+  color: #ffffff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+.btn-letter-primary:hover {
+  background: #b8860b;
+}
+
+.btn-letter-secondary {
+  background: #ffffff;
+  border: 1px solid #d5dce6;
+  color: #4a5a6e;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.btn-letter-secondary:hover {
+  background: #f5f7fa;
+  border-color: #b0bcca;
+}
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: #ffffff;
+  border-radius: 16px;
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalIn 0.2s ease;
+}
+
+@keyframes modalIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  border-bottom: 1px solid #e9edf4;
+}
+
+.modal-header h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1a2332;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #98a6b9;
+  transition: color 0.2s ease;
+  padding: 0 8px;
+}
+
+.modal-close:hover {
+  color: #1a2332;
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-body pre {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  background: #f8f9fb;
+  padding: 16px 20px;
+  border-radius: 8px;
+  border: 1px solid #e9edf4;
+  margin: 0;
+  color: #1a2332;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #e9edf4;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 /* ===== FOOTER ===== */
 .app-footer {
   text-align: center;
@@ -512,11 +674,23 @@ body {
     font-size: 1.5rem;
   }
 
-  .card-body {
-    grid-template-columns: 1fr;
+  .card-body-layout {
+    flex-direction: column;
+    align-items: center;
   }
 
-  .field {
+  .card-image-col {
+    flex: 0 0 auto;
+    max-width: 180px;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .card-fields-col {
+    width: 100%;
+  }
+
+  .card-fields-col .field {
     flex-direction: column;
     align-items: flex-start;
     gap: 2px;
@@ -533,6 +707,24 @@ body {
 
   .btn-primary,
   .btn-secondary {
+    width: 100%;
+    text-align: center;
+  }
+
+  .rejection-actions {
+    flex-direction: column;
+  }
+
+  .rejection-actions button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+  }
+
+  .modal-footer button {
     width: 100%;
     text-align: center;
   }
