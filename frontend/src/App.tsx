@@ -135,7 +135,7 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
   };
 
   // ================================================
-  // "TRY SAMPLE LABEL"
+  // "TRY SAMPLE LABEL" — Add to BOTTOM of results
   // ================================================
   const loadExample = () => {
     const exampleResult: LabelResult = {
@@ -156,11 +156,12 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
       processing_time_ms: 124,
       imageUrl: '/images/Old Tom Distillery.jpg',
     };
-    setResults([exampleResult, ...results]);
+    // Add to BOTTOM (newest goes last)
+    setResults([...results, exampleResult]);
   };
 
   // ================================================
-  // FILE UPLOAD
+  // FILE UPLOAD — Add to BOTTOM of results
   // ================================================
   const onDrop = async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
@@ -201,7 +202,8 @@ Alcohol and Tobacco Tax and Trade Bureau (TTB)
       setProcessedCount(i + 1);
     }
 
-    setResults([...newResults, ...results]);
+    // Add to BOTTOM (newest goes last)
+    setResults([...results, ...newResults]);
     setLoading(false);
     setProcessedCount(0);
     setTotalCount(0);
