@@ -72,7 +72,7 @@ body {
   font-weight: 400;
 }
 
-/* ===== DASHBOARD (Split Layout) ===== */
+/* ===== DASHBOARD ===== */
 .dashboard {
   display: grid;
   grid-template-columns: 380px 1fr;
@@ -260,7 +260,7 @@ body {
   100% { transform: rotate(360deg); }
 }
 
-/* ===== RIGHT PANEL (Results) ===== */
+/* ===== RIGHT PANEL ===== */
 .results-panel {
   background: #ffffff;
   border-radius: 16px;
@@ -406,12 +406,13 @@ body {
   font-size: 0.65rem;
 }
 
-/* ===== CARD BODY: IMAGE + FIELDS SIDE-BY-SIDE ===== */
+/* ===== CARD BODY: IMAGE + 2-COLUMN FIELDS ===== */
 .card-body-layout {
   display: flex;
   gap: 20px;
   padding: 14px 16px;
   align-items: flex-start;
+  overflow: hidden;
 }
 
 .card-image-col {
@@ -435,15 +436,22 @@ body {
   min-width: 0;
 }
 
-/* ===== FIELDS ===== */
-.card-fields-col .field {
-  display: flex;
-  justify-content: space-between;
-  padding: 3px 0;
-  border-bottom: 1px solid #f1f4f8;
+/* 2-COLUMN FIELDS GRID */
+.fields-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 24px;
 }
 
-.card-fields-col .field:last-of-type {
+.field {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px solid #f1f4f8;
+  overflow: hidden;
+}
+
+.field:last-of-type {
   border-bottom: none;
 }
 
@@ -453,6 +461,8 @@ body {
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.3px;
+  flex-shrink: 0;
+  margin-right: 8px;
 }
 
 .field-value {
@@ -460,8 +470,10 @@ body {
   font-size: 0.85rem;
   font-weight: 500;
   text-align: right;
-  max-width: 60%;
   word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  flex: 1;
 }
 
 /* ===== ERRORS & WARNINGS ===== */
@@ -505,11 +517,11 @@ body {
   font-size: 0.8rem;
 }
 
-/* ===== REJECTION LETTER ACTIONS (Buttons) ===== */
+/* ===== REJECTION BUTTONS (Inline) ===== */
 .rejection-actions {
   display: flex;
-  gap: 10px;
-  padding: 12px 16px 16px;
+  gap: 8px;
+  padding: 10px 16px;
   border-top: 1px solid #f0e8d8;
   flex-wrap: wrap;
   background: #fef9f0;
@@ -519,12 +531,15 @@ body {
   background: #d4a02b;
   color: #ffffff;
   border: none;
-  padding: 8px 20px;
+  padding: 6px 16px;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   transition: background 0.2s ease;
+  flex: 1;
+  min-width: 120px;
+  white-space: nowrap;
 }
 
 .btn-letter-primary:hover {
@@ -535,11 +550,15 @@ body {
   background: #ffffff;
   border: 1px solid #d5dce6;
   color: #4a5a6e;
-  padding: 8px 16px;
+  padding: 6px 14px;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   transition: all 0.2s ease;
+  flex: 1;
+  min-width: 80px;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .btn-letter-secondary:hover {
@@ -576,14 +595,8 @@ body {
 }
 
 @keyframes modalIn {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 .modal-header {
@@ -658,7 +671,6 @@ body {
   .dashboard {
     grid-template-columns: 1fr;
   }
-
   .upload-panel {
     max-width: 600px;
   }
@@ -669,61 +681,54 @@ body {
     flex-direction: column;
     align-items: flex-start;
   }
-
   .logo-area h1 {
     font-size: 1.5rem;
   }
-
   .card-body-layout {
     flex-direction: column;
     align-items: center;
   }
-
   .card-image-col {
     flex: 0 0 auto;
     max-width: 180px;
     width: 100%;
     margin-bottom: 10px;
   }
-
   .card-fields-col {
     width: 100%;
   }
-
-  .card-fields-col .field {
+  .fields-grid {
+    grid-template-columns: 1fr;
+  }
+  .field {
     flex-direction: column;
     align-items: flex-start;
     gap: 2px;
   }
-
   .field-value {
     text-align: left;
     max-width: 100%;
   }
-
   .action-bar {
     flex-direction: column;
   }
-
   .btn-primary,
   .btn-secondary {
     width: 100%;
     text-align: center;
   }
-
   .rejection-actions {
     flex-direction: column;
   }
-
-  .rejection-actions button {
+  .btn-letter-primary,
+  .btn-letter-secondary {
+    white-space: normal;
     width: 100%;
-    text-align: center;
+    flex: none;
   }
-
   .modal-footer {
     flex-direction: column;
   }
-
   .modal-footer button {
     width: 100%;
     text-align: center;
