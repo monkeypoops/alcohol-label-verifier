@@ -9,6 +9,89 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [processedCount, setProcessedCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  // ================================================
+  // GENERATE REJECTION LETTER (FIXED: removed unused 'index' and 'brand')
+  // ================================================
+  const generateRejectionLetter = (result: LabelResult): string => {
+    const brandName = result.extracted_data.brand_name || 'your brand';
+    const missingFields: string[] = [];
+    
+    if (!result.extracted_data.brand_name) missingFields.push('• Brand Name');
+    if (!result.extracted_data.class_type) missingFields.push('• Class/Type Designation');
+    if (!result.extracted_data.alcohol_content) missingFields.push('• Alcohol Content (ABV)');
+    if (!result.extracted_data.net_contents) missingFields.push('• Net Contents');
+    if (!result.extracted_data.bottler_address) missingFields.push('• Bottler/Importer Name and Address');
+    if (!result.extracted_data.country_of_origin) missingFields.push('• Country of Origin (for imports)');
+    if (!result.extracted_data.government_warning) missingFields.push('• Government Health Warning Statement');
+
+    const missingList = missingFields.join('\n');
+
+    return `Dear ${brandName},
+
+Unfortunately, we could not accept your alcohol label application for the following reason(s):
+
+${missingList}
+
+Please make the necessary corrections and resubmit your label for approval.
+
+The TTB requires the following mandatory information on all alcohol beverage labels:
+
+• Brand Name
+• Class/Type Designation
+• Alcohol Content (ABV)
+• Net Contents
+• Bottler/Importer Name and Address
+• Country of Origin (for imported products)
+• Government Health Warning Statement (exact wording, "GOVERNMENT WARNING" in all caps)
+
+For complete guidelines, please refer to TTB.gov.
+
+We appreciate your cooperation and look forward to reviewing your revised submission.
+
+Sincerely,
+
+Sarah Chen
+Deputy Director of Label Compliance
+Alcohol and Tobacco Tax and Trade Bureau (TTB)
+`;
+  };
+
+  // ================================================
+  // COPY TO CLIPBOARD
+  // ================================================
+  const copyToClipboard = (text: string, index: number) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    }).catch(() => {
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    });
+  };
+
+  // ================================================
+  // DOWNLOAD AS .TXT
+  // ================================================
+  const downloadLetter = (text: string, brandName: string) => {
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Rejection_Letter_${brandName || 'Label'}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   // ================================================
   // "TRY SAMPLE LABEL" — Instant PASS result
@@ -183,71 +266,104 @@ function App() {
             </div>
           ) : (
             <div className="results-grid">
-              {results.map((res, idx) => (
-                <div key={res.id} className={`result-card ${res.passed ? 'pass' : 'fail'}`}>
-                  <div className="card-header">
-                    <span className="label-number">#{idx + 1}</span>
-                    <span className={`status-badge ${res.passed ? 'pass' : 'fail'}`}>
-                      {res.passed ? '✅ Pass' : '❌ Fail'}
-                    </span>
-                    <span className="processing-time">{res.processing_time_ms}ms</span>
-                  </div>
+              {results.map((res, idx) => {
+                const letter = !res.passed ? generateRejectionLetter(res) : '';
+                const brandName = res.extracted_data.brand_name || 'Label';
 
-                  <div className="card-body">
-                    <div className="field">
-                      <span className="field-label">Brand</span>
-                      <span className="field-value">{res.extracted_data.brand_name || '—'}</span>
-                    </div>
-                    <div className="field">
-                      <span className="field-label">Type</span>
-                      <span className="field-value">{res.extracted_data.class_type || '—'}</span>
-                    </div>
-                    <div className="field">
-                      <span className="field-label">ABV</span>
-                      <span className="field-value">{res.extracted_data.alcohol_content || '—'}</span>
-                    </div>
-                    <div className="field">
-                      <span className="field-label">Net Contents</span>
-                      <span className="field-value">{res.extracted_data.net_contents || '—'}</span>
-                    </div>
-                    <div className="field">
-                      <span className="field-label">Origin</span>
-                      <span className="field-value">{res.extracted_data.country_of_origin || '—'}</span>
-                    </div>
-                    <div className="field">
-                      <span className="field-label">Bottler</span>
-                      <span className="field-value">{res.extracted_data.bottler_address || '—'}</span>
-                    </div>
-                    <div className="field">
-                      <span className="field-label">Gov Warning</span>
-                      <span className="field-value">
-                        {res.extracted_data.government_warning ? '✅ Present' : '❌ Missing'}
+                return (
+                  <div key={res.id} className={`result-card ${res.passed ? 'pass' : 'fail'}`}>
+                    <div className="card-header">
+                      <span className="label-number">#{idx + 1}</span>
+                      <span className={`status-badge ${res.passed ? 'pass' : 'fail'}`}>
+                        {res.passed ? '✅ Pass' : '❌ Fail'}
                       </span>
+                      <span className="processing-time">{res.processing_time_ms}ms</span>
                     </div>
-                  </div>
 
-                  {res.errors.length > 0 && (
-                    <div className="card-errors">
-                      <strong>Errors:</strong>
-                      <ul>
-                        {res.errors.map((e, i) => (
-                          <li key={i}>{e}</li>
-                        ))}
-                      </ul>
+                    <div className="card-body">
+                      <div className="field">
+                        <span className="field-label">Brand</span>
+                        <span className="field-value">{res.extracted_data.brand_name || '—'}</span>
+                      </div>
+                      <div className="field">
+                        <span className="field-label">Type</span>
+                        <span className="field-value">{res.extracted_data.class_type || '—'}</span>
+                      </div>
+                      <div className="field">
+                        <span className="field-label">ABV</span>
+                        <span className="field-value">{res.extracted_data.alcohol_content || '—'}</span>
+                      </div>
+                      <div className="field">
+                        <span className="field-label">Net Contents</span>
+                        <span className="field-value">{res.extracted_data.net_contents || '—'}</span>
+                      </div>
+                      <div className="field">
+                        <span className="field-label">Origin</span>
+                        <span className="field-value">{res.extracted_data.country_of_origin || '—'}</span>
+                      </div>
+                      <div className="field">
+                        <span className="field-label">Bottler</span>
+                        <span className="field-value">{res.extracted_data.bottler_address || '—'}</span>
+                      </div>
+                      <div className="field">
+                        <span className="field-label">Gov Warning</span>
+                        <span className="field-value">
+                          {res.extracted_data.government_warning ? '✅ Present' : '❌ Missing'}
+                        </span>
+                      </div>
                     </div>
-                  )}
-                  {res.warnings.length > 0 && (
-                    <div className="card-warnings">
-                      <strong>Warnings:</strong>
-                      <ul>
-                        {res.warnings.map((w, i) => (
-                          <li key={i}>{w}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              ))}
+
+                    {res.errors.length > 0 && (
+                      <div className="card-errors">
+                        <strong>Errors:</strong>
+                        <ul>
+                          {res.errors.map((e, i) => (
+                            <li key={i}>{e}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {res.warnings.length > 0 && (
+                      <div className="card-warnings">
+                        <strong>Warnings:</strong>
+                        <ul>
+                          {res.warnings.map((w, i) => (
+                            <li key={i}>{w}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* ===== REJECTION LETTER (ONLY FOR FAILED LABELS) ===== */}
+                    {!res.passed && (
+                      <div className="rejection-letter">
+                        <div className="letter-header">
+                          <span className="letter-icon">📧</span>
+                          <strong>Rejection Letter</strong>
+                          <span className="letter-badge">Draft</span>
+                        </div>
+                        <div className="letter-body">
+                          <pre>{letter}</pre>
+                        </div>
+                        <div className="letter-actions">
+                          <button
+                            className="btn-letter"
+                            onClick={() => copyToClipboard(letter, idx)}
+                          >
+                            {copiedIndex === idx ? '✅ Copied!' : '📋 Copy Letter'}
+                          </button>
+                          <button
+                            className="btn-letter"
+                            onClick={() => downloadLetter(letter, brandName)}
+                          >
+                            ⬇️ Download .txt
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
